@@ -1,0 +1,23 @@
+{% extends "main.html" %}
+
+{% block extrahead %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'stylesheets/home.css' | url }}">
+{% endblock %}
+
+{% block tabs %}
+{{ super() }}
+{% include "partials/home-body.html" %}
+{% endblock %}
+
+{# The homepage draws its own status line. #}
+{% block statusline %}{% endblock %}
+
+{% block content %}{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ 'javascripts/home.js' | url }}"></script>
+{% endblock %}

@@ -1,0 +1,532 @@
+## 3.0.0-beta.1 [15th October 2026]
+
+### Added
+
+- WebSocket requests: connect to `ws://` or `wss://`, send text/JSON or base64 binary messages,
+  and inspect a timestamped live message log. Incoming messages repaint while idle; inspecting an
+  older payload pauses following without stopping reception. Disconnect preserves the exchange
+  in history. TLS, headers, authentication, cookies, variables and bounded headless runs are supported.
+- Smart quotes and brackets in structured request bodies, GraphQL queries and variables, gRPC messages, and structured multipart values. Opening delimiters insert a matching closer, selections are wrapped, and typing an existing matching closer moves through it. Enter preserves indentation and expands bracket pairs onto separate lines; paste remains literal.
+- Server-sent events (SSE): HTTP responses with `text/event-stream` open a live event log with
+  timestamps, event names, IDs, and text/JSON inspection. Stop a stream without losing received
+  events, revisit it in history, and stream gzip/deflate responses. Reconnection is explicit;
+  headless runs retain their timeout and report stream interruptions as failures.
+
+## 3.0.0-beta.0 [13th October 2026]
+
+### Posting 3
+
+Posting 3 is a rewrite in Go, distributed as a single binary
+for macOS, Linux, and Windows. Existing Posting 2 HTTP collections open without conversion.
+See [Coming from Posting 2](guide/migrating.md) for compatibility limits before sharing collections
+between versions.
+
+### Added
+
+- OAuth 2.0 authorization code with S256 PKCE and client credentials, automatic token refresh, and token storage in the OS credential store. Configure it in **Auth** and send to authorize; **Forget OAuth token** clears the cached login. If secure storage is unavailable, tokens stay in memory with a warning. See [OAuth 2.0](guide/requests.md#oauth-20).
+- Explore JSON responses with Terma's collapsible JSON tree: press `t` in the body, filter with JSONPath, and copy values with `y` or paths with `Y`. Switch back to the text view without losing its cursor, selection or search. Works with history and decoded gRPC messages too.
+- Search response bodies with `ctrl+f` or `/`: live, case-insensitive highlighting, a match count, and next/previous navigation with `enter`/`shift+enter` or `n`/`N` in the body.
+- Multipart and whole-file request bodies, with a selected-part inspector, path completion, upload progress and curl import/export. File paths are relative to the collection; saved requests and history keep references rather than file contents. See [Multipart and file uploads](guide/requests.md#multipart-and-file-uploads).
+- A `using-posting` skill teaches Claude Code, Codex, Pi, Amp and other coding agents to send API requests through the Posting you have open. Install it with `posting remote skill`. See [Coding Agents](guide/agents.md).
+- [GraphQL requests](guide/requests.md#graphql-requests), with separate query and JSON variables
+  editors, operation selection, and error counts for responses that contain GraphQL errors.
+- [gRPC requests](guide/requests.md#grpc-requests), including unary calls and all streaming modes.
+  Discover methods with server reflection, `.proto` files, or compiled descriptor sets. View
+  messages as they arrive, keep streams open to send more messages, and export calls as grpcurl.
+- [Request tabs](guide/navigation.md#preview-tabs) let you keep several requests open and send them
+  independently. A reusable preview tab keeps collection browsing from filling the tab strip.
+- [Layered environments](guide/environments.md#layered-environments), with a shared `posting.env`
+  base, named environments, and local files for secrets. Posting remembers the environment chosen
+  for each collection and reloads active environment files when they change.
+- [Request traces](guide/responses.md#trace) show timing for each stage of an exchange. The URL bar
+  shows progress while a request runs, and timing is saved with its history entry.
+- [Bruno import](guide/importing.md#bruno) for individual requests and whole collections, including
+  HTTP, GraphQL, and gRPC requests. The importer detects OpenAPI, Postman, and Bruno sources.
+- [Environment import](guide/importing.md#environments) from Postman exports and Bruno collections.
+  Collection variables go in `posting.env` and each environment in its own `<name>.env`.
+  References between variables are kept, so a `BASE_URL` built from `HOST` follows the selected
+  environment (#270).
+- [Remote control](guide/remote_control.md) lets another terminal or a coding agent drive a running Posting instance.
+  Open, send, and save requests, switch environments, and read responses as text or JSON.
+  Requests use the app's active environment and appear in its tabs and history.
+- [Collection filtering](guide/navigation.md#searching-for-requests) by request name, folder, or
+  HTTP method with `ctrl+g`.
+- [Curl export](guide/requests.md#exporting-as-curl) with resolved values or preserved variable
+  expressions for sharing.
+- 37 built-in themes with live previews, and resizable collection, request, and response panels.
+
+### Changed
+
+- The sidebar divider fades into the sidebar in its lower half on dark themes; light themes are unchanged.
+- Install Posting 3 with Homebrew, a release download, or `go install`. Existing `uv` and `pipx`
+  installations remain on Posting 2. See [Installation](guide/index.md#installation).
+- `ctrl+n` opens a new request tab, `ctrl+g` searches the collection, and `alt+z` expands a panel.
+  `F1` lists all keyboard shortcuts.
+- History uses a new format stored separately from Posting 2 history. Existing history isn't
+  migrated or removed.
+- Posting 3 reads existing configuration, keymaps, and theme files, with
+  [documented differences](guide/migrating.md). `POSTING_*` settings come from the shell environment,
+  and custom CA bundles must be PEM files.
+- Scrollbar thumbs fade out after a second of inactivity and reappear when scrolling. Their tracks are transparent.
+- Text cursors blink once per second with short fades to 10% opacity, approximating the macOS caret. `text_input.blinking_cursor: false` still keeps a steady cursor.
+- Notifications use Terma's toast queue instead of replacing each other: up to three are visible, longer messages wrap, hovering pauses expiry, and clicking dismisses a toast. Startup problems are each shown in full.
+
+### Fixed
+
+- Preserve disabled and duplicate query rows when undoing or redoing URL and query-table edits.
+- Keep automatic gRPC method discovery tied to the request that was sent, even when the editor or environment changes during the call.
+- Resolve aliases first used in later gRPC stream messages against the call's original variables.
+- Prevent Save As, Duplicate, and remote save from overwriting files absent from the loaded collection.
+- Preserve concurrent history additions and deletions across Posting processes, and finish pending writes on normal app quit.
+- Import a single curl `--json @path` as a file upload with JSON headers, read when sending.
+- Use `ctrl+r` to toggle table rows and multipart parts instead of `ctrl+space`, which conflicts with the macOS input-source switcher.
+- Stop file-path completions and helper text flickering while typing in multipart and whole-file request bodies.
+- Show file paths below request titles in open-tab search, and match searches against both titles and paths.
+- Stop forwarding authorization after redirects to another host or from HTTPS to HTTP, and recalculate Digest authentication for allowed redirects.
+- Apply the gRPC response limit to displayed JSON, including empty protobuf messages.
+- Load and watch collections whose root directory is a symlink.
+- Include form fields in the history body-size limit.
+- Ignore disabled headers and inactive body and authentication fields when resolving request variables.
+- Preserve empty headers and repeated `--json` bodies when importing or exporting curl commands.
+- Reject empty request input in `posting remote` instead of sending the active tab.
+
+### Not yet supported
+
+- Posting 2 Python scripts are preserved in saved requests but aren't executed.
+- X resources themes, live theme-file reloading, and custom syntax and method colours in theme files.
+
+GraphQL, gRPC, and requests with `variable_scope` must be edited in Posting 3. Saving them in
+Posting 2 removes the fields that hold their queries, RPC settings, or scoped variables.
+
+## 2.11.2 [5th October 2026]
+
+### Fixed
+
+- Send configured client certificates when using a custom CA bundle file or directory (#325).
+- Load password-protected combined PEM client certificates without a separate key file.
+
+## 2.11.1 [5th October 2026]
+
+### Security
+
+- Reject Python object tags when loading request YAML files, preventing code execution from crafted collections (reported in #348 and #383).
+- Load user theme files with YAML's safe loader, so Python tags in a theme file are rejected.
+
+## 2.11.0 [26th September 2026]
+
+### Added
+
+- A History tab beside Requests, with locally persisted request configurations and responses. Load an exchange into both panes without sending a request or running scripts; browse with the keyboard, delete entries, or clear history (#382).
+- A variables screen for inspecting effective values and editing session overrides, with filtering, secret masking, copying, revert, and undo/redo. Open it with `ctrl+shift+v` or the command palette (#376, building on #367).
+- Switch, clear, and load environments from a command palette submenu without restarting Posting. Session overrides are retained (#381).
+- Variable autocompletion in request body and description text areas, with keyboard navigation and dismissal (#380).
+- A per-request **Substitute body variables** option, enabled by default. Disable it to send raw and form bodies with literal dollar signs while retaining URL, header, and authentication substitution; body variable suggestions are hidden while disabled (#379; fixes #352).
+- Colour-coded HTTP method tags in the request search palette, matching the request tree (#366).
+
+### Fixed
+
+- Restore deleted open requests to the request tree when saving them again, including requests in subfolders, without creating duplicate nodes (#377; fixes #369).
+- Keep URL-bar query parameters in sync with the Query tab and outgoing requests, preserving duplicate values, disabled rows, and variable expressions (#368; fixes #272 and #362).
+- Keep the correct URL when importing curl commands with cookie, redirect, or proxy flags before the URL (#354).
+- Fall back to Textual's terminal clipboard when the native clipboard is unavailable (#374).
+
+## 2.10.0 [25th March 2026]
+
+### Added
+
+- Added copy functionality to key-value tables (headers, query params, cookies, etc.) via `c` or `y` key, allowing copying of name, value, or both.
+- Added ability to load environment files at runtime via new command palette `Load environment file`.
+- Added ability to copy the URL using `ctrl+y`.
+
+
+### Fixed
+- Fixed themes not auto-reloading when the theme file is a symlink.
+- Fixed last character being omitted when yanking text in visual mode.
+- Support importing OpenAPI 3.0 specs (previously only 3.1 was supported).
+- Ensure we enforce UTF-8 when reading files (already enforced for writing) (#311).
+- Ensure Vim keybinds work in the method selector dropdown.
+
+
+### Changed
+- Use standardized dependency groups in `pyproject.toml` instead of legacy development dependencies (#341).
+- Link the contribution guide from the README (#327).
+- `MethodSelector`: uppercase letters can now be used to change the method.
+- `MethodSelector`: Disables Textual's built-in `type_to_search` behavior.
+- `MethodSelector`: Navigation using the underlined letters in the select overlay is now supported. 
+- `PostingSelect`: You can navigate options using j,k,l, space.
+    - k and j move the cursor up and down through options.
+    - l selects the highlighted option. Space now also selects the highlighted option
+
+## 2.9.2 [14th October 2025]
+
+### Fixed
+
+- Fixed path parameters interference across requests.
+
+## 2.9.1 [24th September 2025]
+
+### Fixed
+
+- Fixed unexpectedly high CPU usage via updating textual-autocomplete to 4.0.6.
+
+## 2.9.0 [17th September 2025]
+
+### Added
+
+- Path parameter support (`:param` syntax) [(#295)](https://github.com/darrenburns/posting/pull/295)
+- New built-in themes: `hypernova`, `synthwave`. [(#300)](https://github.com/darrenburns/posting/pull/300)
+- Added `export: copy as YAML` command to the command palette [(#299)](https://github.com/darrenburns/posting/pull/299)
+
+## 2.8.0 [13th September 2025]
+
+### Changed
+
+- Update to Textual 6.1.0 from 3.0.0.
+- Remove notification when creating + opening a new request.
+
+## 2.7.1 [22nd July 2025]
+
+### Fixed
+
+- Pin tree-sitter to <0.25.0 to fix crash due to breaking API change.
+
+## 2.7.0 [19th April 2025]
+
+### Added
+
+- Collections can now be imported from Postman [(#106)](https://github.com/darrenburns/posting/pull/106)
+- `posting.env` files in the current directory will automatically be loaded if no `--env` options are provided [(#249)](https://github.com/darrenburns/posting/pull/249)
+- Generate JSON body with default values after importing OpenAPI specs [(#247)](https://github.com/darrenburns/posting/pull/247)
+- Use tags to separate sub-collections in OpenAPI specs [(#247)](https://github.com/darrenburns/posting/pull/247)
+- curl import now handles various different data options [(#252)](https://github.com/darrenburns/posting/pull/252)
+- Added `-c` shorthand alias for `--collection` option [(#250)](https://github.com/darrenburns/posting/pull/250)
+- Added `posting sponsors` command, which lists people who have supported Posting via GitHub Sponsors (specific sponsor tiers only). [(#253)](https://github.com/darrenburns/posting/pull/253)
+
+### Changed
+
+- A double-click rather than a single-click is now required to enter edit mode inside data tables (e.g. headers, query params, etc.) [(#256)](https://github.com/darrenburns/posting/pull/256)
+- In the body editor, the `Form data` menu item now shows `(x-www-form-urlencoded)` after the label, to suggest the type of data being sent. [(#259)](https://github.com/darrenburns/posting/pull/259)
+
+### Fixed
+
+- Exported curl command uses `-d` for form data now, rather than `-F`. The result is exported commands with form data will now use `application/x-www-form-urlencoded` instead of `multipart/form-data` (matching Posting's behaviour). [(#252)](https://github.com/darrenburns/posting/pull/252)
+- Fix attempting to add a protocol before applying variables in the URL bar [(#248)](https://github.com/darrenburns/posting/pull/248)
+- Fix script path with custom function [(#254)](https://github.com/darrenburns/posting/pull/254)
+- Fixed Posting's default `User-Agent` header not being used [(#259)](https://github.com/darrenburns/posting/pull/259)
+
+## 2.6.0 [29th March 2025]
+
+### Added
+
+- Added `spacing: <compact|standard>` config to allow for a more compact UI (default: `standard`).
+- Added ability to edit headers, form data, and query params without deleting and recreating them.
+    - Press `enter` or click a row to enter edit mode. The row will be highlighted, and focus will move to the key/name input.
+        Submitted changes will overwrite the existing row rather than adding a new one.
+    - Press `v` to enter edit mode and immediately focus on the value input.
+    - Press `escape` to cancel the edit.
+    - Press `enter` to save the changes and exit edit mode.
+    - The background colour behind the input will update to indicate edit mode is active.
+- Added autocompletion for header values based on the header name.
+    - For example, if the header is `Content-Type`, when typing the value, you'll be able to quickly autocomplete from a list of common content types.
+- Press `/` to open the request search palette while the collection browser is focused.
+    - `ctrl+shift+p` remains available as a global shortcut for this.
+- Added `help: Open web docs` command to the command palette.
+- Basic Vim motions to script output log (`hjkl`).
+- Added response status code label to the URL bar.
+- Contributing guide added to the GitHub repo (`CONTRIBUTING.md`).
+
+### Changed
+
+- Rewrite of the autocompletion system used to autocomplete header names, values, URLs, and variables.
+- Automatically prepend `http://` protocol if no protocol is specified in the URL bar.
+- Debounce jump overlay recomposition - if you resize while the jump overlay is open, it'll wait a short period before recomputing.
+- Jump mode now lives on the main screen, rather than globally. This makes more sense as it's only available on the main screen. The only user-facing impact should be that the position of the keybinding in the footer and keybindings panel may change.
+- Jump mode interaction with Tabs now uses the Tabs API, rather than simulating a Click.
+- Status code label now displayed in the URL bar beside the trace markers.
+- Request description area at the bottom of the collection browser has new design.
+- When there are no response cookies, the cookies section will now display a message to the user.
+- Updated to Textual 3.0.0.
+- Various updates to the https://posting.sh homepage.
+
+### Fixed
+
+- Fixed scrolling in response headers and cookies tabs using keyboard.
+- Fixed crash when immediately pressing enter after loading the UI when the `on_startup` config is set to `url` (this was due to lazy loading of the UI, and attempting to send a request before the UI was fully loaded).
+- Fixed accepting a completion via enter in the header editor also adding the header.
+    - Now, the first enter press will accept the completion, and the second enter press will add the header.
+- Fixed Textual markup not being escaped key value tables.
+- Fixed request description attempting to parse Textual markup [(#243)](https://github.com/darrenburns/posting/pull/243)
+
+## 2.5.4 [13th March 2025]
+
+### Fixed
+
+- Prioritise user-defined `User-Agent` header over Posting's default.
+
+## 2.5.3 [13th March 2025]
+
+### Changed
+
+- Lazily load content of tabs which are hidden on startup (100ms saved at startup).
+- Only import openapi-pydantic when importing OpenAPI specs via `posting import` (63ms saved at startup).
+- Pin httpx and patch out httpx._main to prevent slow import (20ms saved at startup).
+- Defer import of watchfiles until app is running (6ms saved at startup).
+- Defer `HelpScreen` import until it's used (10ms saved at startup).
+
+## 2.5.2 [8th March 2025]
+
+### Added
+
+- Validation and corresponding UI feedback in New Request modal.
+
+### Fixed
+
+- Fixed crash when attempting to delete a request that doesn't exist on disk.
+- Fixed being able to create requests with empty names.
+
+## 2.5.1 [7th March 2025]
+
+### Fixed
+
+- Fixed importing of `max-time` from curl commands.
+
+### Changed
+
+- When importing a request from curl, request metadata (name, description) will not be overwritten.
+
+## 2.5.0 [7th March 2025]
+
+### Added
+
+- Added bearer token auth support in the `Auth` tab.
+- Added support for importing securitySchemes in OpenAPI specs.
+
+### Changed
+
+- OpenAPI specs are now parsed using an external library (`openapi-pydantic`).
+
+## 2.4.1 [6th March 2025]
+
+### Added
+
+- Added command palette option to export the request as a curl command *without* running setup scripts.
+- Added new documentation on working with the response in Posting and via external pagers/editors.
+- Added new documentation on saving requests into folder structures from within Posting.
+
+### Fixed
+
+- Fixed crash when toggling rows via clicking the checkbox
+- Fixed erroneous trailing ellipsis in `Info` tab.
+- Fixed error messages in toasts on read and write timeouts.
+
+### Changed
+
+- Variables will be substituted into exported curl commands.
+    - Undefined variables will be left as is (e.g. `$foo` will be left as `$foo` in the curl command)
+- Setup scripts will now run by default when exporting to curl.
+- Do not focus the URL bar when an error occurs on sending a request.
+- Small visual refinement in `Scripts` tab.
+
+## 2.4.0 [2nd March 2025]
+
+### Added
+
+- Added ability to toggle rows in tables on and off (press `space` or click the checkbox to toggle).
+- Added "Export to curl" option in the command palette, to copy the request to your clipboard as a curl command.
+- Added `curl_export_extra_args` config to allow for adding extra arguments to the curl command copied to your clipboard.
+- Allow for customisation of "open in editor" and "open in pager" keys (`open-in-editor` and `open-in-pager` in the keymap).
+- Added ability to quickly search for request by name and jump to it (press `ctrl+shift+p` to open the search popup).
+- Added configurable keybinding `search-requests` (default: `ctrl+shift+p`).
+- A few more screenshots were added to the "Navigation" guide.
+- Added new headers to autocompletion: `Accept-Charset`, `DNT`, `Upgrade`, `Sec-Fetch-Site`, `Sec-Fetch-Mode`, `Sec-Fetch-User`, `Sec-Fetch-Dest`, and `Service-Worker-Navigation-Preload`.
+- Removed some headers from autocompletion (due to being deprecated or response-only headers).
+
+### Changed
+
+- Upgraded Textual from version 0.86.0 to 2.1.1.
+
+### Fixed
+
+- Fixed variable preview not being shown below URL bar when cursor is over a variable.
+- Fixed `ctrl+?` keybinding not opening contextual help on some terminals.
+
+## 2.3.1 [1st March 2025]
+
+### Changed
+
+- Renamed "Change theme" to "Preview theme" in command palette, and update description to not imply the change persists across sessions (use the config file for persistent changes).
+
+### Fixed
+
+- Fixed crash when invalid syntax theme is specified. Posting now exits cleanly with an error message.
+- Fixed toast message on copying text referring to "Response text" regardless of what text was copied.
+- Fixed error handling and messaging when themes contain invalid syntax, invalid values. Includes batching errors and displaying multiple in one message.
+- Fixed animation level config no longer being respected.
+- Fixed missing `get_variable` method in scripting API that was described in docs but not implemented.
+
+## 2.3.0 [19th November 2024]
+
+### Added
+
+- Editing a theme on disk will result in the UI refreshing in real-time to reflect changes.
+
+## 2.2.0 [17th November 2024]
+
+### Added
+
+- Added 15 new themes (4 specific to Posting, 11 inherited from Textual's new theme system).
+- Themes are now in submenu of command palette.
+- Keybinding assistant can now be displayed as a sidebar, teaching you keybindings as you go.
+- New tooltips when hovering over collection browser keybinds in the app footer.
+
+### Changed 
+
+- Syntax highlighting colours now derive automatically from the current theme.
+- URL bar highlighting now derives automatically from the current theme.
+- Method colour-coding in the collection browser is now derived automatically from the current theme.
+- Jump mode UI has been refined to be more readable.
+- Various refinements to existing themes.
+- Options and descriptions in command palette reworded and reordered for clarity.
+- Updated to Textual 0.86.1.
+
+### Fixed
+
+- Fixed error notification not rendering correctly when HTTP request times out.
+
+## 2.1.1 [12th November 2024]
+
+### Fixed
+
+- Fix collection browser message not being visible when it's empty.
+
+### Changed
+
+- Improved message in empty collection browser, indicating keybind for how to toggle the collection browser.
+
+## 2.1.0 [11th November 2024]
+
+### Added
+
+- Import curl command by pasting it into the URL bar.
+
+### Changed
+
+- Collection browser width now adjusts based on content, so it doesn't waste a lot of space on larger screens.
+- Info tab now shows "Request not saved to disk" if a request has not been saved to disk, rather than "None" or nothing at all.
+
+## 2.0.0 [18th October 2024]
+
+### Added
+
+- **Scripting**: Run Python scripts before and after sending requests. Scripts can be used to perform setup, set variables, modify requests, and more.
+    - Define "setup", "pre-request" and "post-request" Python functions and attach them to requests.
+    - Posting will automatically reload these functions when they change, meaning you can edit them in an external editor while Posting is running.
+    - Scripts can be used to directly manipulate the request, set variables which are used in the request (e.g. set a `$token` variable which is used in the request URL).
+    - Output from scripts is captured and displayed in the "Scripts" tab.
+- **Keymaps**: Change the default keybindings for any of Posting's "global" actions (e.g. sending request, opening jump mode, etc.) by editing `keymap` section of your `config.yaml` file.
+- Added `heading.hostname` config to allow customisation of the hostname in the header. This field supports Rich markup. You may wish to use this to apply highlighting when `posting` is running on a production system vs a development environment, for example.
+- Added `focus.on_request_open` config to automatically shift focus when a request is opened via the collection browser. For example, you might prefer to have focus jump to the "Body" tab when a request is opened.
+- More detail and screenshots added to several sections of the guide.
+    - Much more detail added to the "Getting Started" section.
+    - Collections guide updated to explain more about the collection browser.
+    - Guide for Keymaps added.
+    - Guide for Scripting added.
+    - Guide for External Tools added (integrating with vim, less, fx, etc.)
+- `alt`+`enter` can now be used to send a request (in addition to the existing `ctrl+j` binding).
+- Tooltips added to more actions in the app footer. These appear on mouse hover.
+
+### Changed
+
+- Automatically apply `content-type` header based on the body type selected in the UI.
+- Updated to Textual 0.83.0
+- Various refinements to autocompletion, upgrading to textual-autocomplete 3.0.0a12.
+- Dependency specifications loosened on several dependencies.
+- Recommended installation method changed from rye to uv.
+
+### Fixed
+
+- Fixed double rendering in "jump mode" overlay.
+- Fixed sidebar not working on mobile on https://posting.sh
+- Fixed autocompletion appearing when on 1 item in the list and the "search string" is equal to that item.
+
+## 1.13.0 [8th September 2024]
+
+### Added
+
+- New `collection_browser.show_on_startup` config to control whether the collection browser is shown on startup.
+- Watch for changes to loaded dotenv files and reload UI elements that depend on them when they change.
+
+### Changed
+
+- Upgraded all dependencies.
+- Remove `pydantic-settings` crash workaround on empty config files.
+- Renaming `App.maximized` as it now clashes with a Textual concept.
+- Removed "using default collection" message from startup.
+
+### Fixed
+
+- Fixed crash while rendering error message on timeout.
+
+## 1.12.3 [4th September 2024]
+
+### Fixed
+
+- Fixed crash when no clipboard tool installed
+
+## 1.12.2 [4th September 2024]
+
+*This release was yanked. It's functionally identical to 1.12.1.*
+
+## 1.12.1 [21st August 2024]
+
+### Fixed
+
+- Fix "invalid escape sequence" warnings on Python 3.12+
+- Fix buttons in request deletion confirmation modal not being usable with the enter key.
+
+## 1.12.0 [17th August 2024]
+
+### Added
+
+- Colour-coding of methods in the collection browser.
+- Added FAQ to website.
+
+## 1.11.0 [15th August 2024]
+
+### Added
+
+- This file, `CHANGELOG.md`.
+- Launch docs website.
+- Duplicate request (with new request popup) under cursor in tree with ++d++.
+- "Quick" duplicate request (without new request popup, request name is auto-generated) under cursor in tree with ++shift+d++.
+- Delete request (with confirmation modal) under cursor in tree with ++backspace++.
+- "Quick" delete request (without confirmation modal) under cursor in tree with ++shift+backspace++.
+- "Quit Posting" added to command palette.
+- Move the sidebar to the right or left using `collection_browser.position: 'right' | 'left'` config.
+- Refinements to "galaxy" theme.
+- "galaxy" theme is now default.
+- Help text added to "empty state" in the collection browser.
+- Extend info in the "Collection Browser" help modal.
+- Visual indicator (a red bar on the left) on Input fields that contain invalid values.
+- Toast message now appears when trying to submit the 'new request' modal with invalid values.
+- Public roadmap (initial brain-dump version).
+
+### Fixed
+- Ensure the location of the request on disk in the `Info` tab wraps instead of clipping out of view.
+- Inserting requests in sorted position on creation.
+- Prevent creating requests with no name.
+- Prevent writing paths in the file-name field in the new request modal.
+- Prevent specifying paths outside of the open collection dir in the directory field in the new request modal.
+- Fix variables not being substituted into several fields, including auth.
+
+### Changed
+
+- Upgrade to Textual version 0.76.0
+- Change logic to render bindings in help modal to reflect new Textual API.
+- Sort order of requests in the tree improved.
+
+---
+
+!!! note
+    Changes prior to 1.11.0 are not documented here.
+    Please see the [Releases page](https://github.com/darrenburns/posting/releases) on GitHub for information on changes prior to 1.11.0.
